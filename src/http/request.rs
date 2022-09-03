@@ -12,12 +12,41 @@ pub struct Request {
 
 impl TryFrom<&[u8]> for Request {
     type Error = ParseError;
-    // GET /search?name=abc&sort=1 HTTP/1.1
+    // GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
     fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
         let req_str = str::from_utf8(buffer)?;
 
-        unimplemented!();
+        let (method, req_str) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, req_str) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
+
+        if protocol != "HTTP/1.1" {
+            return Err(ParseError::InvalidProtocol)
+        }
+
+        let method = Method::try_from(method)?; 
+        let mut query_string = None;
+
+        if let Some(i) = path.find('?') {
+            path = &path[..i];
+            query_string = Some(path[i + 1..].to_string());
+        }
+
+        Ok(Self {
+            path: path.to_string(),
+            query_string,
+            method,
+        })
     }
+}
+
+fn get_next_word(req_str: &str) -> Option<(&str, &str)> {
+    for (i, c) in req_str.chars().enumerate() {
+        if c == ' ' || c == '\r' {
+            return Some((&req_str[..i], &req_str[i + 1..]))
+        }
+    }
+    None
 }
 
 #[derive(Debug)]
