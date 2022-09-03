@@ -5,6 +5,7 @@ use std::error::Error;
 use std::{fmt, str};
 use std::str::Utf8Error;
 
+#[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
@@ -19,7 +20,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         let req_str = str::from_utf8(buffer)?;
 
         let (method, req_str) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
-        let (mut path, req_str) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
+        let (full_path, req_str) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(req_str).ok_or(ParseError::InvalidRequest)?;
 
         if protocol != "HTTP/1.1" {
@@ -27,11 +28,12 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         }
 
         let method = Method::try_from(method)?; 
+        let mut path = full_path;
         let mut query_string = None;
 
-        if let Some(i) = path.find('?') {
-            path = &path[..i];
-            query_string = Some(QueryString::from(&path[i + 1..]));
+        if let Some(i) = full_path.find('?') {
+            path = &full_path[..i];
+            query_string = Some(QueryString::from(&full_path[i + 1..]));
         }
 
         Ok(Self {

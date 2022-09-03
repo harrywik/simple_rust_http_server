@@ -28,7 +28,7 @@ impl Server {
                         println!("Received request: {}", String::from_utf8_lossy(&buffer));
                         match Request::try_from(&buffer as &[u8]) {
                             Ok(req) => {
-
+                                dbg!(req);
                             },
                             Err(e) => println!("Could not convert buffer into Request. Error: {}", e)
                         }
