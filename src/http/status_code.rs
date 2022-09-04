@@ -10,9 +10,9 @@ pub enum StatusCode {
 impl StatusCode {
     pub fn get_phrase(&self) -> &str {
         match self {
-            Self::OK => "200 OK",
-            Self::BadRequest => "400 BAD REQUEST",
-            Self::NotFound => "404 NOT FOUND"
+            Self::OK => "Ok",
+            Self::BadRequest => "Bad Request",
+            Self::NotFound => "Not Found"
         }
     }
 }
