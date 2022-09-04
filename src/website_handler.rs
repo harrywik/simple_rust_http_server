@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::fs::{read_to_string, canonicalize};
 use crate::server::Handler;
 use crate::http::{Method, Request, Response, StatusCode};
 
@@ -27,6 +27,19 @@ impl WebsiteHandler {
 
     pub fn read_file(&self, file_path: &str) -> Option<String> {
         let path = format!("{}/{}", self.public_path, file_path);
-        read_to_string(path).ok()
+        match canonicalize(path) {
+            Ok(path) => {
+                if path.starts_with(&self.public_path) {
+                    read_to_string(path).ok()
+                } else {
+                    println!("Directory traversal attack attempted: {}", file_path);
+                    None
+                }
+            },
+            Err(e) => {
+                println!("Could not canonicalize path: {}", e);
+                None
+            }
+        }
     }
 }
